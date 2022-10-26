@@ -1,0 +1,161 @@
+---
+title: "Report PL_Contact Center"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: cerulean
+runtime: shiny
+
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(gapminder)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(shiny)
+report <- read_excel('Qualidade_PL.xlsx',col_types=c('numeric','numeric','text','text','text','text','text','date','numeric'),na = 'NA')
+df<-data.frame(report)
+
+
+df12<-data.frame(group_by(df, Posting) %>% dplyr::count(Posting))
+
+df5<-data.frame(group_by(df, Categoria) %>% dplyr::count(Categoria))
+
+```
+
+
+
+
+Oportunidades em Sinistro
+==========================
+
+
+
+Row {data.height=650}
+--------------------------
+
+
+
+```{r}
+#selectInput("Meses", label = "Meses:",
+           #choices = unique(gapminder$`9`), selected = "9")
+
+
+```
+
+
+### Casos por dia
+
+```{r}
+report <- read_excel('Qualidade_PL.xlsx',col_types=c('numeric','numeric','text','text','text','text','text','date','numeric'),na = 'NA')
+df<-data.frame(report)
+
+#data <- data.frame(x, random_y)
+df14<- xtabs(~Posting+Categoria,df)
+df15<-as.data.frame.matrix(df14)
+df16<-data.frame(Posting = row.names(df15), df15, row.names = NULL)
+
+
+
+library(plotly)
+
+
+Procedente <- c(df16$Product.Liability...PDCA...Check...Possivel.PL.Procedente)
+Improcedente <- c(df16$Product.Liability...PDCA...Check...Possivel.PL.Improcedente)
+
+postagem <- c(df16$Posting)
+
+data <- data.frame(postagem,Procedente,Improcedente)
+
+fig <- plot_ly(data, x = ~postagem, y = ~Procedente, name = 'Sinistro Procedente', type = 'scatter', mode = 'lines') 
+fig <- fig %>% add_trace(y = ~Improcedente, name = 'Sinistro Improcedente', mode = 'lines+markers') 
+
+
+fig
+```
+
+Row {data.height=350}
+--------------------------
+
+
+### Casos por categoria
+
+```{r}
+labels = c(df5$Categoria)
+values = c(df5$n)
+
+fig <- plot_ly(type='pie', labels=labels, values=values, 
+               textinfo='percent',
+               insidetextorientation='radial')
+fig
+
+```
+
+### Casos por Canal
+
+```{r}
+report <- read_excel('Qualidade_PL.xlsx',col_types=c('numeric','numeric','text','text','text','text','text','date','numeric'),na = 'NA')
+df<-data.frame(report)
+df13<-data.frame(group_by(df, df$Canal) %>% dplyr::count(Canal))
+
+
+
+
+fig <- plot_ly(
+  x = df13$Canal,
+  y = df13$n,
+  name = "SF Zoo",
+  type = "bar"
+)
+
+fig
+
+
+```
+
+Fonte de dados
+==========================
+
+
+
+```{r}
+report <- read_excel('Qualidade_PL.xlsx',col_types=c('numeric','numeric','text','text','text','text','text','date','numeric'),na = 'NA')
+df<-data.frame(report)
+df17<- xtabs(~Posting+Categoria,df)
+df18<-as.data.frame.matrix(df17)
+df19<-data.frame(Posting = row.names(df18), df18, row.names = NULL)
+df20<-sum(df19$Product.Liability...PDCA...Check...Possivel.PL.Procedente)
+df21<-sum(df19$Product.Liability...PDCA...Check...Possivel.PL.Improcedente)
+
+df23<-c('<b>Total</b>', df20, df21)
+df22<-rbind(df19,df23)
+
+fig <- plot_ly(
+  type = 'table',
+  header = list(
+    values = c('<b>Categoria</b>', 'Sinistro Procedente','Sinistro Improcedente'),
+    line = list(color = '#506784'),
+    fill = list(color = '#119DFF'),
+    align = c('left','center'),
+    font = list(color = 'white', size = 12)
+  ),
+  cells = list(
+    values = rbind(
+      c(df22$Posting),
+      c(df22$Product.Liability...PDCA...Check...Possivel.PL.Procedente),
+      c(df22$Product.Liability...PDCA...Check...Possivel.PL.Improcedente)),
+    line = list(color = '#506784'),
+    fill = list(color = c('#25FEFD', 'white')),
+    align = c('left', 'center'),
+    font = list(color = c('#506784'), size = 12)
+    ))
+
+fig
+```
+
+GA Pending - Sinistro
+==========================
